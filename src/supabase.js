@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-// These will be replaced with actual values from environment variables
-const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+// Environment variables for Supabase - must be set in .env file
+// For Parcel, use VITE_ prefix which becomes import.meta.env.VITE_*
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || window.ENV?.SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Validate URL before creating client
+if (!supabaseUrl || !supabaseUrl.startsWith('http')) {
+  console.error('Invalid Supabase URL. Please set VITE_SUPABASE_URL in your .env file');
+}
 
-// Paystack public key - replace with your actual key
-export const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || 'YOUR_PAYSTACK_PUBLIC_KEY';
+// Create client only if valid URL provided
+export const supabase = supabaseUrl && supabaseUrl.startsWith('http') 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
+
+// Paystack public key
+export const PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_demo';
 
 // Platform settings
 export const PLATFORM_FEE = 500; // ₦500 fixed fee
@@ -15,6 +24,8 @@ export const SUPPLIER_COMMISSION = 0.8; // 80% to supplier
 
 // Helper to check if user is authenticated
 export async function getCurrentUser() {
+  if (!supabase) return null;
+  
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   
